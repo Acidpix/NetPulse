@@ -1,19 +1,14 @@
-<div align="center">
 
-<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="Acidpix" data-color="#5F7FFF" data-emoji=""  data-font="Lato" data-text="Buy me what you want" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+# NetPulse
 
-# 🟢 NetPulse
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-GPL-blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Debian%2012-orange)](https://debian.org)
 
 **Lightweight, self-hosted network monitoring dashboard — no heavy dependencies required.**
 
 Monitor your VMs, servers, workstations and switches in real time via ICMP ping,  
 with persistent history, automatic network discovery, and a modern dark UI.
-
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Debian%2012-orange)](https://debian.org)
-
-</div>
 
 ---
 
@@ -32,24 +27,8 @@ with persistent history, automatic network discovery, and a modern dark UI.
 
 ## 📸 Preview
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  🟢 NETPULSE   [Grid] [List]  [Discovery] [Export]      │
-│  Real backend · 192.168.1.10 (debian-srv)               │
-├───────────┬───────────┬───────────┬───────────┐         │
-│  Online 7 │ Offline 1 │ Checking 0│ Total   8 │         │
-├───────────┴───────────┴───────────┴───────────┘         │
-│  [All] [Online] [Offline] [VM] [Servers] [Switch]       │
-│                                                          │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │
-│  │ Server       │ │ VM           │ │ Switch       │    │
-│  │ web-srv-01   │ │ vm-dev-01    │ │ sw-core-01   │    │
-│  │ 192.168.1.10 │ │ 192.168.1.101│ │ 192.168.1.254│    │
-│  │ ● Online     │ │ ● Online     │ │ ● Online     │    │
-│  │ 3ms  100%    │ │ 12ms  95%    │ │ 1ms   100%   │    │
-│  └──────────────┘ └──────────────┘ └──────────────┘    │
-└─────────────────────────────────────────────────────────┘
-```
+<img width="800" height="600" alt="Capture d&#39;écran 2026-03-20 122059" src="https://github.com/user-attachments/assets/802a1cbf-9489-4580-b4b5-ccdc11313177" />
+<img width="800" height="600" alt="Capture d&#39;écran 2026-03-20 122046" src="https://github.com/user-attachments/assets/01a65706-2fe6-4218-99f0-f0e35ffb9bf1" />
 
 ---
 
@@ -97,7 +76,6 @@ sudo chown $USER:$USER /opt/netpulse
 
 ### Step 4 — Copy the files
 
-**From your local machine (SCP):**
 ```bash
 cd /opt/netpulse
 wget https://github.com/Acidpix/NetPulse/releases/download/Main_release/NetPulse_v0.1_Release.zip
@@ -107,6 +85,7 @@ unzip NetPulse_v0.1_Release.zip
 ### Step 5 — Install npm dependencies
 
 ```bash
+cd /opt/netpulse
 npm install
 ```
 ### Step 6 — (Optional) Manual test
@@ -377,4 +356,4 @@ Native Node.js modules used (no install needed): `fs`, `os`, `dns`, `child_proce
 
 ## 📄 License
 
-MIT — free to use, modify and redistribute.
+GPL 3.0
