@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetPulse Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c10;--surface:#111318;--surface2:#181c24;--border:#1e2430;
+  --green:#00ff88;--green-dim:rgba(0,255,136,0.10);--green-glow:rgba(0,255,136,0.30);
+  --red:#ff3a5c;--red-dim:rgba(255,58,92,0.10);
+  --yellow:#ffb800;--yellow-dim:rgba(255,184,0,0.10);
+  --blue:#4d9fff;--blue-dim:rgba(77,159,255,0.10);
+  --purple:#a78bfa;--text:#e2e8f0;--text-muted:#5a6478;--text-dim:#8896a8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.02) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrapper{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24px;}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:34px;height:34px;border:2px solid var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px var(--green-glow),inset 0 0 8px var(--green-dim);animation:pulse-logo 2.5s ease-in-out infinite;flex-shrink:0;}
+@keyframes pulse-logo{0%,100%{box-shadow:0 0 14px var(--green-glow),inset 0 0 8px var(--green-dim);}50%{box-shadow:0 0 24px var(--green-glow),inset 0 0 14px rgba(0,255,136,0.18);}}
+.logo-icon svg{width:16px;height:16px;stroke:var(--green);}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;letter-spacing:0.06em;}
+.logo-text span{color:var(--green);}
+.logo-sub{font-size:0.58rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);opacity:0.85;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+.icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);padding:7px 13px;border-radius:6px;font-family:inherit;font-size:0.67rem;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.icon-btn:hover{border-color:var(--green);color:var(--green);box-shadow:0 0 10px var(--green-dim);}
+.icon-btn.export-btn:hover{border-color:var(--blue);color:var(--blue);}
+.icon-btn.discover-btn{border-color:rgba(167,139,250,0.3);color:var(--purple);}
+.icon-btn.discover-btn:hover{border-color:var(--purple);color:var(--purple);box-shadow:0 0 10px rgba(167,139,250,0.15);}
+.icon-btn.spinning svg{animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.view-toggle{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:3px;}
+.view-btn{background:transparent;border:none;color:var(--text-muted);width:30px;height:26px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.view-btn.active{background:var(--green-dim);color:var(--green);}
+
+/* ── Stats ── */
+.stats-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;position:relative;overflow:hidden;flex:1;min-width:100px;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.green::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.stat-card.red::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.stat-card.yellow::before{background:linear-gradient(90deg,transparent,var(--yellow),transparent);}
+.stat-card.blue::before{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.stat-label{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
+.stat-value{font-family:'Syne',sans-serif;font-weight:700;font-size:1.6rem;line-height:1;}
+.stat-card.green .stat-value{color:var(--green);}
+.stat-card.red .stat-value{color:var(--red);}
+.stat-card.yellow .stat-value{color:var(--yellow);}
+.stat-card.blue .stat-value{color:var(--blue);}
+
+/* ── Controls ── */
+.controls{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:5px 13px;border-radius:100px;font-family:inherit;font-size:0.67rem;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s;}
+.filter-btn:hover,.filter-btn.active{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.add-btn{margin-left:auto;background:var(--green);border:none;color:#000;padding:6px 16px;border-radius:6px;font-family:inherit;font-size:0.68rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s;display:flex;align-items:center;gap:7px;white-space:nowrap;}
+.add-btn:hover{background:#33ffaa;box-shadow:0 0 16px var(--green-glow);}
+
+/* ── Add form ── */
+.add-form{background:var(--surface);border:1px solid var(--green);border-radius:10px;padding:16px 20px;margin-bottom:18px;display:none;box-shadow:0 0 20px var(--green-dim);animation:slideDown 0.2s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.add-form.show{display:block;}
+.add-form h3{font-family:'Syne',sans-serif;font-size:0.78rem;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px;}
+.form-group label{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+.form-group input,.form-group select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-family:inherit;font-size:0.75rem;outline:none;transition:border-color 0.2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--green);}
+.form-group select option{background:var(--surface2);}
+.form-actions{display:flex;gap:8px;margin-top:14px;}
+.btn-save{background:var(--green);border:none;color:#000;padding:7px 18px;border-radius:5px;font-family:inherit;font-size:0.7rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn-save:hover{background:#33ffaa;}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:7px 18px;border-radius:5px;font-family:inherit;font-size:0.7rem;cursor:pointer;transition:all 0.2s;}
+.btn-cancel:hover{border-color:var(--red);color:var(--red);}
+
+/* ── Backend banner ── */
+.backend-banner{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:0.67rem;color:var(--text-dim);flex-wrap:wrap;}
+.backend-badge{padding:2px 10px;border-radius:4px;font-size:0.59rem;letter-spacing:0.07em;text-transform:uppercase;font-weight:600;white-space:nowrap;}
+.backend-badge.real{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,255,136,0.2);}
+.backend-badge.sim{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(255,184,0,0.2);}
+.server-ip{margin-left:auto;font-size:0.62rem;color:var(--text-muted);}
+.server-ip span{color:var(--green);font-weight:600;}
+
+/* ════════════════════════════════════════
+   DISCOVERY PANEL
+════════════════════════════════════════ */
+.discovery-panel{
+  background:var(--surface);border:1px solid var(--purple);border-radius:10px;
+  padding:0;margin-bottom:18px;display:none;
+  box-shadow:0 0 24px rgba(167,139,250,0.08);animation:slideDown 0.2s ease;
+  overflow:hidden;
+}
+.discovery-panel.show{display:block;}
+
+.disc-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  background:rgba(167,139,250,0.05);
+}
+.disc-title{font-family:'Syne',sans-serif;font-weight:800;font-size:0.85rem;color:var(--purple);letter-spacing:0.06em;}
+.disc-close{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;transition:color 0.2s;}
+.disc-close:hover{color:var(--red);}
+
+.disc-controls{display:flex;gap:10px;padding:14px 18px;align-items:flex-end;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.disc-subnet-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:200px;}
+.disc-subnet-group label{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+.disc-subnet-group input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-family:inherit;font-size:0.78rem;outline:none;transition:border-color 0.2s;}
+.disc-subnet-group input:focus{border-color:var(--purple);}
+.disc-subnet-presets{display:flex;gap:6px;flex-wrap:wrap;}
+.disc-preset{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:4px;font-family:inherit;font-size:0.62rem;cursor:pointer;transition:all 0.2s;}
+.disc-preset:hover{border-color:var(--purple);color:var(--purple);}
+.disc-start-btn{background:var(--purple);border:none;color:#fff;padding:8px 20px;border-radius:6px;font-family:inherit;font-size:0.72rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:flex;align-items:center;gap:7px;}
+.disc-start-btn:hover{background:#c4b5fd;}
+.disc-start-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.disc-start-btn.scanning svg{animation:spin 0.8s linear infinite;}
+
+/* Progress */
+.disc-progress{padding:10px 18px;border-bottom:1px solid var(--border);display:none;}
+.disc-progress.show{display:block;}
+.disc-progress-bar-wrap{background:var(--surface2);border-radius:100px;height:5px;overflow:hidden;margin-bottom:6px;}
+.disc-progress-bar{height:100%;background:var(--purple);border-radius:100px;transition:width 0.3s;width:0%;}
+.disc-progress-label{font-size:0.62rem;color:var(--text-muted);display:flex;justify-content:space-between;}
+
+/* Results */
+.disc-results{max-height:320px;overflow-y:auto;}
+.disc-result-header{display:grid;grid-template-columns:130px 1fr 80px 70px 100px;gap:0 10px;padding:7px 18px;background:var(--surface2);font-size:0.58rem;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);position:sticky;top:0;}
+.disc-row{display:grid;grid-template-columns:130px 1fr 80px 70px 100px;gap:0 10px;padding:8px 18px;border-top:1px solid var(--border);align-items:center;font-size:0.72rem;animation:fadeIn 0.25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.disc-row:hover{background:var(--surface2);}
+.disc-ip{font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;}
+.disc-name{color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.disc-method{font-size:0.6rem;padding:2px 7px;border-radius:100px;text-align:center;}
+.disc-method.dns{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.2);}
+.disc-method.netbios{background:rgba(77,159,255,0.1);color:var(--blue);border:1px solid rgba(77,159,255,0.2);}
+.disc-method.ip{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);}
+.disc-latency{color:var(--green);font-size:0.7rem;}
+.disc-add-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:4px;font-family:inherit;font-size:0.62rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.disc-add-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.disc-add-btn.added{border-color:var(--text-muted);color:var(--text-muted);cursor:default;opacity:0.5;}
+.disc-empty{padding:24px;text-align:center;color:var(--text-muted);font-size:0.72rem;}
+.disc-summary{padding:10px 18px;font-size:0.67rem;color:var(--text-muted);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.disc-summary span{color:var(--green);}
+
+/* ════════════════════════════════════════
+   GRID / LIST
+════════════════════════════════════════ */
+.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.host-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:13px 14px;position:relative;overflow:hidden;transition:transform 0.18s;animation:fadeIn 0.3s ease both;cursor:pointer;}
+.host-card:hover{transform:translateY(-2px);}
+.host-card.online{border-color:rgba(0,255,136,0.18);}
+.host-card.offline{border-color:rgba(255,58,92,0.18);}
+.host-card.checking{border-color:rgba(255,184,0,0.18);}
+.host-card::after{content:'';position:absolute;left:0;top:-100%;width:100%;height:100%;background:linear-gradient(transparent,rgba(0,255,136,0.025),transparent);pointer-events:none;}
+.host-card.scanning::after{animation:scan 1.2s linear infinite;}
+@keyframes scan{from{top:-100%}to{top:100%}}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+.type-badge{font-size:0.56rem;letter-spacing:0.09em;text-transform:uppercase;padding:2px 7px;border-radius:100px;border:1px solid;}
+.type-vm{color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.07);}
+.type-workstation{color:var(--blue);border-color:rgba(77,159,255,0.3);background:rgba(77,159,255,0.07);}
+.type-server{color:var(--yellow);border-color:rgba(255,184,0,0.3);background:rgba(255,184,0,0.08);}
+.type-switch{color:#34d399;border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.07);}
+.type-router{color:#f97316;border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.07);}
+.type-firewall{color:#ef4444;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.07);}
+.status-indicator{display:flex;align-items:center;gap:5px;font-size:0.59rem;letter-spacing:0.07em;text-transform:uppercase;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.online .status-dot{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s ease-in-out infinite;}
+.offline .status-dot{background:var(--red);box-shadow:0 0 6px var(--red);}
+.checking .status-dot{background:var(--yellow);box-shadow:0 0 6px var(--yellow);animation:blink 0.6s ease-in-out infinite;}
+.unknown .status-dot{background:var(--text-muted);}
+.online .status-text{color:var(--green);}
+.offline .status-text{color:var(--red);}
+.checking .status-text{color:var(--yellow);}
+.unknown .status-text{color:var(--text-muted);}
+.host-name{font-family:'Syne',sans-serif;font-weight:700;font-size:0.86rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.host-ip{font-size:0.65rem;color:var(--text-muted);}
+.divider{height:1px;background:var(--border);margin:9px 0;}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.metric-label{font-size:0.56rem;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1px;}
+.metric-value{font-size:0.76rem;font-weight:600;color:var(--text);}
+.metric-value.good{color:var(--green);}
+.metric-value.warn{color:var(--yellow);}
+.uptime-bar{display:flex;gap:2px;margin-top:9px;}
+.uptime-tick{height:4px;flex:1;border-radius:1px;}
+.card-actions{margin-top:9px;display:flex;gap:5px;}
+.card-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:3px 9px;border-radius:4px;font-family:inherit;font-size:0.6rem;cursor:pointer;letter-spacing:0.04em;transition:all 0.2s;flex:1;text-align:center;}
+.card-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.card-btn.edit:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.card-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+
+/* List */
+.list-view{display:flex;flex-direction:column;}
+.list-header{display:grid;grid-template-columns:18px 1fr 120px 90px 70px 120px 90px 90px;gap:0 10px;padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px 8px 0 0;font-size:0.59rem;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);align-items:center;}
+.sort-col{cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;transition:color 0.15s;}
+.sort-col:hover{color:var(--text);}
+.sort-col.active{color:var(--green);}
+.sort-arrow{font-size:0.65rem;opacity:0.7;}
+.list-row{display:grid;grid-template-columns:18px 1fr 120px 90px 70px 120px 90px 90px;gap:0 10px;padding:8px 14px;border:1px solid var(--border);border-top:none;background:var(--surface);align-items:center;transition:background 0.12s;animation:fadeIn 0.22s ease both;cursor:pointer;}
+.list-row:last-child{border-radius:0 0 8px 8px;}
+.list-row:hover{background:var(--surface2);}
+.list-row.online{border-left:3px solid rgba(0,255,136,0.35);}
+.list-row.offline{border-left:3px solid rgba(255,58,92,0.35);}
+.list-row.checking{border-left:3px solid rgba(255,184,0,0.35);}
+.list-row.unknown{border-left:3px solid rgba(90,100,120,0.3);}
+.list-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.list-row.online .list-dot{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s ease-in-out infinite;}
+.list-row.offline .list-dot{background:var(--red);}
+.list-row.checking .list-dot{background:var(--yellow);animation:blink 0.6s ease-in-out infinite;}
+.list-row.unknown .list-dot{background:var(--text-muted);}
+.list-name{font-size:0.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-ip{font-size:0.64rem;color:var(--text-muted);}
+.list-latency{font-size:0.73rem;font-weight:600;}
+.list-latency.good{color:var(--green);}
+.list-latency.warn{color:var(--yellow);}
+.list-uptime{font-size:0.7rem;color:var(--text-dim);}
+.list-check{font-size:0.63rem;color:var(--text-muted);}
+.list-actions{display:flex;gap:4px;}
+.list-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:3px 8px;border-radius:4px;font-family:inherit;font-size:0.6rem;cursor:pointer;transition:all 0.2s;}
+.list-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.list-btn.edit:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.list-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.mini-bar{display:flex;gap:1px;align-items:flex-end;height:16px;}
+.mini-tick{width:4px;border-radius:1px;}
+
+/* ── Modal édition ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:420px;max-width:92vw;box-shadow:0 0 40px rgba(0,0,0,0.5);transform:scale(0.95);transition:transform 0.2s;}
+.modal-overlay.open .modal{transform:scale(1);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;}
+.modal-title span{color:var(--green);}
+.modal-close{background:transparent;border:1px solid var(--border);color:var(--text-muted);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+.modal-warn{background:var(--yellow-dim);border:1px solid rgba(255,184,0,0.25);border-radius:6px;padding:8px 12px;font-size:0.65rem;color:var(--yellow);margin-bottom:16px;display:none;}
+.modal-warn.show{display:block;}
+.modal-actions{display:flex;gap:8px;margin-top:20px;}
+.btn-update{background:var(--green);border:none;color:#000;padding:8px 20px;border-radius:5px;font-family:inherit;font-size:0.72rem;font-weight:700;cursor:pointer;transition:all 0.2s;flex:1;}
+.btn-update:hover{background:#33ffaa;}
+.btn-delete{background:transparent;border:1px solid var(--red);color:var(--red);padding:8px 16px;border-radius:5px;font-family:inherit;font-size:0.72rem;cursor:pointer;transition:all 0.2s;}
+.btn-delete:hover{background:var(--red-dim);}
+
+/* ── Drawer historique ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.drawer-overlay.open{opacity:1;pointer-events:all;}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:420px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);z-index:101;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;}
+.drawer.open{transform:translateX(0);}
+.drawer-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;}
+.drawer-title{font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.drawer-title span{color:var(--green);}
+.drawer-header-btns{display:flex;gap:6px;flex-shrink:0;}
+.drawer-close{background:transparent;border:1px solid var(--border);color:var(--text-muted);width:30px;height:30px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:1rem;}
+.drawer-close:hover{border-color:var(--red);color:var(--red);}
+.drawer-edit-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:0 10px;height:30px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.62rem;display:flex;align-items:center;gap:5px;transition:all 0.2s;white-space:nowrap;}
+.drawer-edit-btn:hover{border-color:var(--blue);color:var(--blue);}
+.drawer-meta{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:16px;flex-shrink:0;flex-wrap:wrap;}
+.dmeta{display:flex;flex-direction:column;gap:3px;}
+.dmeta-label{font-size:0.58rem;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);}
+.dmeta-value{font-size:0.8rem;font-weight:600;}
+.dmeta-value.good{color:var(--green);}
+.dmeta-value.warn{color:var(--yellow);}
+.dmeta-value.bad{color:var(--red);}
+.drawer-chart{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.chart-label{font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
+.latency-chart{display:flex;align-items:flex-end;gap:2px;height:60px;}
+.lc-bar{flex:1;border-radius:2px 2px 0 0;min-width:3px;position:relative;cursor:default;}
+.lc-bar.offline-bar{background:var(--red);opacity:0.5;}
+.lc-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.6rem;padding:3px 7px;border-radius:4px;white-space:nowrap;z-index:10;}
+.drawer-log{flex:1;overflow-y:auto;padding:0 20px 16px;}
+.log-title{font-size:0.6rem;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);padding:14px 0 8px;position:sticky;top:0;background:var(--surface);}
+.log-row{display:grid;grid-template-columns:1fr 70px 60px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center;font-size:0.67rem;}
+.log-row:last-child{border-bottom:none;}
+.log-time{color:var(--text-dim);}
+.log-status{font-weight:600;}
+.log-status.up{color:var(--green);}
+.log-status.down{color:var(--red);}
+.log-lat{color:var(--text-dim);text-align:right;}
+.log-lat.good{color:var(--green);}
+.log-lat.warn{color:var(--yellow);}
+.drawer-empty{padding:30px 0;text-align:center;color:var(--text-muted);font-size:0.72rem;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--green);border-radius:8px;padding:12px 18px;font-size:0.72rem;color:var(--green);z-index:300;transform:translateY(20px);opacity:0;transition:all 0.3s;pointer-events:none;display:flex;align-items:center;gap:10px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+.empty-state{padding:50px 20px;text-align:center;color:var(--text-muted);}
+.empty-state p{font-size:0.75rem;}
+.last-check{font-size:0.59rem;color:var(--text-muted);text-align:right;margin-top:14px;letter-spacing:0.04em;}
+
+@media(max-width:700px){
+  .stats-bar{flex-wrap:wrap;}.stat-card{min-width:calc(50% - 6px);}
+  .list-header,.list-row{grid-template-columns:14px 1fr 75px 65px 55px;}
+  .list-header>*:nth-child(n+6),.list-row>*:nth-child(n+6){display:none;}
+  .drawer,.disc-result-header,.disc-row{width:100vw;}
+  .disc-result-header,.disc-row{grid-template-columns:110px 1fr 70px 80px;}
+  .disc-result-header>*:nth-child(3),.disc-row>*:nth-child(3){display:none;}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">NET<span>PULSE</span></div>
+        <div class="logo-sub">Infrastructure Monitor</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="btnGrid" onclick="setView('grid')" title="Vue grille">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+        <button class="view-btn" id="btnList" onclick="setView('list')" title="Vue liste">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <button class="icon-btn discover-btn" onclick="toggleDiscovery()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <path d="M11 8v6M8 11h6"/>
+        </svg>
+        Discovery
+      </button>
+      <button class="icon-btn export-btn" onclick="exportConfig()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exporter
+      </button>
+      <button class="icon-btn" onclick="checkAll()" id="refreshBtn">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+        </svg>
+        Refresh all
+      </button>
+    </div>
+  </header>
+
+  <!-- Backend banner -->
+  <div class="backend-banner">
+    <span class="backend-badge sim" id="backendBadge">Connexion…</span>
+    <span id="backendMsg">Tentative de connexion au backend…</span>
+    <span class="server-ip" id="serverIpBadge" style="display:none">
+      Serveur : <span id="serverIpVal">—</span>
+    </span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card green"><div class="stat-label">Online</div><div class="stat-value" id="countOnline">0</div></div>
+    <div class="stat-card red"><div class="stat-label">Offline</div><div class="stat-value" id="countOffline">0</div></div>
+    <div class="stat-card yellow"><div class="stat-label">En cours</div><div class="stat-value" id="countChecking">0</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total</div><div class="stat-value" id="countTotal">0</div></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Tous</button>
+    <button class="filter-btn" onclick="setFilter('online',this)">Online</button>
+    <button class="filter-btn" onclick="setFilter('offline',this)">Offline</button>
+    <button class="filter-btn" onclick="setFilter('vm',this)">VM</button>
+    <button class="filter-btn" onclick="setFilter('server',this)">Serveurs</button>
+    <button class="filter-btn" onclick="setFilter('switch',this)">Switch</button>
+    <button class="filter-btn" onclick="setFilter('workstation',this)">WorkStation</button>
+    <button class="filter-btn" onclick="setFilter('firewall',this)">Firewall</button>
+    <button class="add-btn" onclick="toggleForm()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter
+    </button>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="addForm">
+    <h3>+ Nouvel hôte</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Nom</label><input type="text" id="fName" placeholder="web-server-01"></div>
+      <div class="form-group"><label>Adresse IP / Hostname</label><input type="text" id="fIp" placeholder="192.168.1.10"></div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="fType">
+          <option value="server">Serveur</option><option value="vm">VM</option>
+          <option value="workstation">WorkStation</option><option value="switch">Switch</option>
+          <option value="router">Routeur</option><option value="firewall">Firewall</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" onclick="addHost()">Ajouter</button>
+      <button class="btn-cancel" onclick="toggleForm()">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Discovery panel -->
+  <div class="discovery-panel" id="discoveryPanel">
+    <div class="disc-header">
+      <div class="disc-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:inline;vertical-align:middle;margin-right:6px">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Network Discovery
+      </div>
+      <button class="disc-close" onclick="toggleDiscovery()">✕</button>
+    </div>
+    <div class="disc-controls">
+      <div class="disc-subnet-group">
+        <label>Subnet à scanner</label>
+        <input type="text" id="discSubnet" placeholder="192.168.1.0/24">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <label style="font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)">Subnets détectés</label>
+        <div class="disc-subnet-presets" id="discPresets">
+          <span style="font-size:0.65rem;color:var(--text-muted)">Chargement…</span>
+        </div>
+      </div>
+      <button class="disc-start-btn" id="discStartBtn" onclick="startDiscovery()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Scanner
+      </button>
+    </div>
+    <div class="disc-progress" id="discProgress">
+      <div class="disc-progress-bar-wrap"><div class="disc-progress-bar" id="discProgressBar"></div></div>
+      <div class="disc-progress-label">
+        <span id="discProgressTxt">Initialisation…</span>
+        <span id="discFoundTxt">0 trouvé(s)</span>
+      </div>
+    </div>
+    <div id="discResultsWrap">
+      <div class="disc-empty" id="discEmpty">Lancez un scan pour découvrir les équipements sur votre réseau.</div>
+      <div style="display:none" id="discTableWrap">
+        <div class="disc-result-header">
+          <span>IP</span><span>Nom (DNS / NetBIOS)</span><span>Méthode</span><span>Latence</span><span>Action</span>
+        </div>
+        <div id="discRows"></div>
+        <div class="disc-summary" id="discSummary" style="display:none">
+          <span>Scan terminé — <span id="discFoundCount">0</span> équipement(s) détecté(s)</span>
+          <button class="disc-add-btn" onclick="addAllDiscovered()" id="discAddAllBtn">+ Tout ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="container"></div>
+  <div class="last-check" id="lastCheck"></div>
+</div>
+
+<!-- Modal édition -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✎ Modifier l'hôte</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-warn" id="modalWarn">⚠ L'adresse IP a changé — l'historique sera réinitialisé.</div>
+    <div class="form-row">
+      <div class="form-group"><label>Nom</label><input type="text" id="eName" placeholder="web-server-01"></div>
+      <div class="form-group"><label>Adresse IP / Hostname</label><input type="text" id="eIp" placeholder="192.168.1.10"></div>
+    </div>
+    <div class="form-row" style="margin-top:10px">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="eType">
+          <option value="server">Serveur</option><option value="vm">VM</option>
+          <option value="workstation">WorkStation</option><option value="switch">Switch</option>
+          <option value="router">Routeur</option><option value="firewall">Firewall</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-update" onclick="saveEdit()">Enregistrer</button>
+      <button class="btn-delete" onclick="deleteFromModal()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer historique -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawerTitle">Historique</div>
+    <div class="drawer-header-btns">
+      <button class="drawer-edit-btn" onclick="openEditFromDrawer()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Modifier
+      </button>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+  </div>
+  <div class="drawer-meta" id="drawerMeta"></div>
+  <div class="drawer-chart" id="drawerChart"></div>
+  <div class="drawer-log" id="drawerLog"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg">OK</span>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+// L'IP est auto-détectée via /api/server-info au démarrage
+// On garde localhost comme fallback si le fichier est ouvert localement
+let BACKEND_URL = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+  ? 'http://localhost:3000'
+  : `${window.location.protocol}//${window.location.hostname}:3000`;
+
+let useRealBackend = false;
+let hosts = [];
+let filter = 'all';
+let viewMode = 'grid';
+let sortBy   = null;
+let sortDir  = 1;
+let editingHostId = null;
+let drawerHostId  = null;
+
+// Discovery state
+let discResults = [];
+let discAddedIps = new Set();
+
+// ─── Auto-détection du backend ───────────────────────────────────────────────
+
+async function detectBackend() {
+  // Si le frontend est servi par Express, window.location.hostname = IP du serveur
+  // On essaie d'abord avec l'URL déduite
+  const candidates = [
+    BACKEND_URL,
+    `http://${window.location.hostname}:3000`,
+    'http://localhost:3000',
+  ];
+
+  for (const url of [...new Set(candidates)]) {
+    try {
+      const r = await fetch(`${url}/api/server-info`, { signal: AbortSignal.timeout(2000) });
+      if (!r.ok) continue;
+      const info = await r.json();
+      BACKEND_URL = url;
+      useRealBackend = true;
+
+      // Mettre à jour la bannière
+      document.getElementById('backendBadge').textContent = 'Backend réel';
+      document.getElementById('backendBadge').className = 'backend-badge real';
+      document.getElementById('backendMsg').textContent =
+        `Connecté à ${BACKEND_URL} — hôtes + historique persistés dans hosts.json.`;
+
+      // Afficher l'IP du serveur
+      if (info.interfaces && info.interfaces.length) {
+        const primary = info.interfaces[0];
+        document.getElementById('serverIpVal').textContent = `${primary.ip} (${info.hostname})`;
+        document.getElementById('serverIpBadge').style.display = '';
+      }
+
+      // Pré-remplir les subnets détectés dans le panneau Discovery
+      if (info.interfaces) {
+        const presets = document.getElementById('discPresets');
+        presets.innerHTML = '';
+        info.interfaces.forEach((iface, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'disc-preset';
+          btn.textContent = iface.subnet;
+          btn.title = `Interface : ${iface.interface} (${iface.ip})`;
+          btn.onclick = () => { document.getElementById('discSubnet').value = iface.subnet; };
+          presets.appendChild(btn);
+          if (i === 0) document.getElementById('discSubnet').value = iface.subnet;
+        });
+      }
+
+      // Charger les hôtes
+      const hr = await fetch(`${BACKEND_URL}/api/hosts`);
+      const saved = await hr.json();
+      hosts = saved.map(h => ({
+        ...h, history: h.history || [],
+        status:    h.history?.length ? (h.history[0].online ? 'online' : 'offline') : 'unknown',
+        latency:   h.history?.length ? h.history[0].latency   : null,
+        lastCheck: h.history?.length ? new Date(h.history[0].timestamp) : null,
+      }));
+      return;
+    } catch { /* essayer suivant */ }
+  }
+
+  // Aucun backend trouvé
+  document.getElementById('backendBadge').textContent = 'Simulation';
+  document.getElementById('backendBadge').className = 'backend-badge sim';
+  document.getElementById('backendMsg').textContent =
+    `Backend non détecté. Mode simulation — historique non persisté.`;
+  document.getElementById('discPresets').innerHTML =
+    '<span style="font-size:0.65rem;color:var(--text-muted)">Non disponible en simulation</span>';
+
+  hosts = [
+    {id:1,name:'web-srv-01',  ip:'192.168.1.10', type:'server'},
+    {id:2,name:'db-server',   ip:'192.168.1.20', type:'server'},
+    {id:3,name:'vm-dev-01',   ip:'192.168.1.101',type:'vm'},
+    {id:4,name:'pc-alice',    ip:'192.168.1.50', type:'workstation'},
+    {id:5,name:'sw-core-01',  ip:'192.168.1.254',type:'switch'},
+  ].map(h => ({ ...h, status:'unknown', latency:null, history:[], lastCheck:null }));
+}
+
+// ─── API helpers ─────────────────────────────────────────────────────────────
+
+async function apiAddHost(name, ip, type) {
+  const r = await fetch(`${BACKEND_URL}/api/hosts`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, ip, type })
+  });
+  if (!r.ok) throw new Error();
+  return r.json();
+}
+
+async function apiUpdateHost(id, name, ip, type) {
+  const r = await fetch(`${BACKEND_URL}/api/hosts/${id}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, ip, type })
+  });
+  if (!r.ok) throw new Error();
+  return r.json();
+}
+
+async function apiDeleteHost(id) {
+  await fetch(`${BACKEND_URL}/api/hosts/${id}`, { method:'DELETE' });
+}
+
+// ─── Ping ────────────────────────────────────────────────────────────────────
+
+async function pingHost(host) {
+  if (useRealBackend) {
+    const r = await fetch(`${BACKEND_URL}/api/ping?host=${host.ip}&id=${host.id}`);
+    return r.json();
+  }
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const seed = host.ip.split('.').reduce((a,b)=>a+parseInt(b),0);
+      const online = (seed + Math.floor(Date.now()/10000)) % 10 < 8;
+      resolve({ online, latency: online ? Math.floor(1+Math.random()*40) : null, timestamp: new Date().toISOString() });
+    }, 300 + Math.random()*700);
+  });
+}
+
+async function checkHost(host) {
+  host.status = 'checking'; render();
+  try {
+    const r = await pingHost(host);
+    host.status    = r.online ? 'online' : 'offline';
+    host.latency   = r.latency;
+    host.lastCheck = new Date(r.timestamp);
+    host.history.unshift({ online: r.online, latency: r.latency, timestamp: r.timestamp });
+    if (host.history.length > 100) host.history.pop();
+  } catch {
+    host.status = 'offline'; host.latency = null; host.lastCheck = new Date();
+    host.history.unshift({ online:false, latency:null, timestamp: new Date().toISOString() });
+  }
+  render(); updateStats();
+  if (drawerHostId === host.id) renderDrawer(host);
+}
+
+async function checkAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  await Promise.all(hosts.map(h => checkHost(h)));
+  btn.classList.remove('spinning');
+  document.getElementById('lastCheck').textContent =
+    'Dernière vérification : ' + new Date().toLocaleTimeString('fr-FR');
+}
+
+// ─── Network Discovery ────────────────────────────────────────────────────────
+
+function toggleDiscovery() {
+  document.getElementById('discoveryPanel').classList.toggle('show');
+}
+
+async function startDiscovery() {
+  if (!useRealBackend) {
+    showToast('Discovery nécessite le backend Node.js');
+    return;
+  }
+  const subnet = document.getElementById('discSubnet').value.trim();
+  if (!subnet) { showToast('Entrez un subnet à scanner'); return; }
+
+  // Reset UI
+  discResults = [];
+  discAddedIps = new Set(hosts.map(h => h.ip));
+  document.getElementById('discRows').innerHTML = '';
+  document.getElementById('discEmpty').style.display  = 'none';
+  document.getElementById('discTableWrap').style.display = '';
+  document.getElementById('discSummary').style.display   = 'none';
+  document.getElementById('discProgress').classList.add('show');
+  document.getElementById('discProgressBar').style.width = '0%';
+  document.getElementById('discProgressTxt').textContent = 'Scan en cours…';
+  document.getElementById('discFoundTxt').textContent    = '0 trouvé(s)';
+
+  const btn = document.getElementById('discStartBtn');
+  btn.disabled = true; btn.classList.add('scanning');
+
+  try {
+    const evtSource = new EventSource(`${BACKEND_URL}/api/discover?subnet=${encodeURIComponent(subnet)}`);
+
+    evtSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+
+      if (data.type === 'progress') {
+        const pct = Math.round((data.scanned / data.total) * 100);
+        document.getElementById('discProgressBar').style.width = pct + '%';
+        document.getElementById('discProgressTxt').textContent =
+          `Scan : ${data.scanned} / ${data.total} IPs`;
+      }
+
+      if (data.type === 'found') {
+        discResults.push(data);
+        document.getElementById('discFoundTxt').textContent = `${discResults.length} trouvé(s)`;
+        appendDiscRow(data);
+      }
+
+      if (data.type === 'done') {
+        evtSource.close();
+        btn.disabled = false; btn.classList.remove('scanning');
+        document.getElementById('discProgressTxt').textContent = 'Scan terminé';
+        document.getElementById('discFoundCount').textContent  = discResults.length;
+        document.getElementById('discSummary').style.display   = '';
+        if (!discResults.length) {
+          document.getElementById('discTableWrap').style.display = 'none';
+          document.getElementById('discEmpty').style.display = '';
+          document.getElementById('discEmpty').textContent = 'Aucun équipement trouvé sur ce subnet.';
+        }
+        showToast(`Discovery terminé — ${discResults.length} équipement(s) trouvé(s)`);
+      }
+    };
+
+    evtSource.onerror = () => {
+      evtSource.close();
+      btn.disabled = false; btn.classList.remove('scanning');
+      showToast('Erreur lors du scan réseau');
+    };
+  } catch (err) {
+    btn.disabled = false; btn.classList.remove('scanning');
+    showToast('Erreur : ' + err.message);
+  }
+}
+
+function appendDiscRow(data) {
+  const already = discAddedIps.has(data.ip);
+  const row = document.createElement('div');
+  row.className = 'disc-row';
+  row.id = `disc-row-${data.ip.replace(/\./g,'-')}`;
+  row.innerHTML = `
+    <div class="disc-ip">${data.ip}</div>
+    <div class="disc-name" title="${data.name}">${data.name}</div>
+    <div><span class="disc-method ${data.method}">${data.method.toUpperCase()}</span></div>
+    <div class="disc-latency">${data.latency ? data.latency.toFixed(1)+'ms' : '—'}</div>
+    <div>
+      <button class="disc-add-btn ${already?'added':''}" id="disc-btn-${data.ip.replace(/\./g,'-')}"
+        onclick="addDiscoveredHost('${data.ip}','${data.name.replace(/'/g,"\\'")}','${data.method}')"
+        ${already?'disabled':''}>
+        ${already ? '✓ Ajouté' : '+ Ajouter'}
+      </button>
+    </div>`;
+  document.getElementById('discRows').appendChild(row);
+}
+
+async function addDiscoveredHost(ip, name, method) {
+  // Deviner le type selon le nom
+  const nameLow = name.toLowerCase();
+  let type = 'workstation';
+  if (/sw|switch|core|access|dist/i.test(nameLow)) type = 'switch';
+  else if (/router|rt|gw|gateway/i.test(nameLow))  type = 'router';
+  else if (/srv|server|serv|dc|db|web|mail/i.test(nameLow)) type = 'server';
+  else if (/vm|virt/i.test(nameLow)) type = 'vm';
+
+  let newHost;
+  if (useRealBackend) {
+    try { newHost = await apiAddHost(name, ip, type); }
+    catch { showToast('Erreur lors de l\'ajout'); return; }
+  } else {
+    const maxId = hosts.reduce((m,h)=>Math.max(m,h.id),0);
+    newHost = { id: maxId+1, name, ip, type };
+  }
+  hosts.push({ ...newHost, status:'unknown', latency:null, history:[], lastCheck:null });
+  discAddedIps.add(ip);
+
+  // Mettre à jour le bouton dans la liste
+  const btn = document.getElementById(`disc-btn-${ip.replace(/\./g,'-')}`);
+  if (btn) { btn.textContent = '✓ Ajouté'; btn.classList.add('added'); btn.disabled = true; }
+
+  updateStats(); render();
+  checkHost(hosts[hosts.length-1]);
+  showToast(`"${name}" ajouté (${type})`);
+}
+
+async function addAllDiscovered() {
+  const toAdd = discResults.filter(d => !discAddedIps.has(d.ip));
+  for (const d of toAdd) await addDiscoveredHost(d.ip, d.name, d.method);
+  showToast(`${toAdd.length} hôte(s) ajouté(s)`);
+}
+
+// ─── Export ──────────────────────────────────────────────────────────────────
+
+async function exportConfig() {
+  try {
+    if (useRealBackend) {
+      const a = document.createElement('a');
+      a.href = `${BACKEND_URL}/api/export`;
+      a.download = 'netpulse-config.json'; a.click();
+    } else {
+      const data = hosts.map(({id,name,ip,type,history}) => ({id,name,ip,type,history}));
+      const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download='netpulse-config.json'; a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    showToast('Configuration exportée');
+  } catch { showToast('Erreur lors de l\'export'); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const typeLabel   = t => ({server:'Serveur',vm:'VM',workstation:'WorkStation',switch:'Switch',router:'Routeur',firewall:'Firewall'}[t]||t);
+const statusLabel = s => ({online:'En ligne',offline:'Hors ligne',checking:'Vérif…',unknown:'—'}[s]||s);
+const latClass    = l => !l?'':l<10?'good':l<30?'':'warn';
+const uptimePct   = h => !h.length?'—':Math.round(h.filter(v=>v.online).length/h.length*100)+'%';
+const avgLatency  = h => { const v=h.filter(v=>v.online&&v.latency).map(v=>v.latency); return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null; };
+
+function uptimeBar(history) {
+  if (!history.length) return '';
+  return '<div class="uptime-bar">'+[...history].slice(0,24).map(v=>
+    `<div class="uptime-tick" style="background:${v.online?'var(--green)':'var(--red)'};opacity:${v.online?'0.4':'0.65'}"></div>`
+  ).join('')+'</div>';
+}
+function miniBar(history) {
+  if (!history.length) return '<span style="color:var(--text-muted);font-size:0.6rem">—</span>';
+  return '<div class="mini-bar">'+[...history].slice(0,20).map(v=>
+    `<div class="mini-tick" style="height:${v.online?(8+Math.random()*8):3}px;background:${v.online?'var(--green)':'var(--red)'};opacity:${v.online?'0.5':'0.7'}"></div>`
+  ).join('')+'</div>';
+}
+
+function filteredHosts() {
+  let list = hosts.filter(h => {
+    if (filter==='all') return true;
+    if (filter==='online') return h.status==='online';
+    if (filter==='offline') return h.status==='offline';
+    return h.type===filter;
+  });
+  if (!sortBy) return list;
+  return [...list].sort((a,b) => {
+    let va,vb;
+    if (sortBy==='name')    {va=a.name.toLowerCase();vb=b.name.toLowerCase();}
+    if (sortBy==='ip')      {va=a.ip.split('.').map(n=>n.padStart(3,'0')).join('');vb=b.ip.split('.').map(n=>n.padStart(3,'0')).join('');}
+    if (sortBy==='type')    {va=typeLabel(a.type);vb=typeLabel(b.type);}
+    if (sortBy==='latency') {va=a.latency??9999;vb=b.latency??9999;}
+    if (sortBy==='uptime')  {const p=h=>h.history.length?h.history.filter(v=>v.online).length/h.history.length:-1;va=p(a);vb=p(b);}
+    if (va<vb) return -1*sortDir;
+    if (va>vb) return  1*sortDir;
+    return 0;
+  });
+}
+function setSort(col) { sortBy===col ? sortDir*=-1 : (sortBy=col,sortDir=1); render(); }
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+
+function render() { viewMode==='grid'?renderGrid():renderList(); updateStats(); }
+
+function renderGrid() {
+  const list = filteredHosts();
+  const c = document.getElementById('container');
+  if (!list.length) { c.innerHTML = emptyHTML(); return; }
+  c.innerHTML = `<div class="grid-view">${list.map((h,i)=>`
+    <div class="host-card ${h.status} ${h.status==='checking'?'scanning':''}" style="animation-delay:${i*0.04}s" onclick="openDrawer(${h.id})">
+      <div class="card-top">
+        <div class="type-badge type-${h.type}">${typeLabel(h.type)}</div>
+        <div class="status-indicator"><div class="status-dot"></div><span class="status-text">${statusLabel(h.status)}</span></div>
+      </div>
+      <div class="host-name">${h.name}</div>
+      <div class="host-ip">${h.ip}</div>
+      <div class="divider"></div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Latence</div><div class="metric-value ${latClass(h.latency)}">${h.latency!=null?h.latency+'ms':'—'}</div></div>
+        <div class="metric"><div class="metric-label">Uptime</div><div class="metric-value">${uptimePct(h.history)}</div></div>
+        <div class="metric"><div class="metric-label">Dernier check</div><div class="metric-value" style="font-size:0.64rem">${h.lastCheck?h.lastCheck.toLocaleTimeString('fr-FR'):'—'}</div></div>
+        <div class="metric"><div class="metric-label">Checks</div><div class="metric-value">${h.history.length}</div></div>
+      </div>
+      ${uptimeBar(h.history)}
+      <div class="card-actions">
+        <button class="card-btn" onclick="event.stopPropagation();checkHost(hosts.find(x=>x.id===${h.id}))">↻</button>
+        <button class="card-btn edit" onclick="event.stopPropagation();openModal(${h.id})">✎</button>
+        <button class="card-btn danger" onclick="event.stopPropagation();removeHost(${h.id})">✕</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderList() {
+  const list = filteredHosts();
+  const c = document.getElementById('container');
+  if (!list.length) { c.innerHTML = emptyHTML(); return; }
+  const arrow = col => sortBy!==col?'<span class="sort-arrow">⇅</span>':`<span class="sort-arrow">${sortDir===1?'↑':'↓'}</span>`;
+  const cls   = col => `sort-col${sortBy===col?' active':''}`;
+  c.innerHTML = `
+  <div class="list-view">
+    <div class="list-header">
+      <span></span>
+      <span class="${cls('name')}" onclick="setSort('name')">Hôte ${arrow('name')}</span>
+      <span class="${cls('type')}" onclick="setSort('type')">Type ${arrow('type')}</span>
+      <span class="${cls('latency')}" onclick="setSort('latency')">Latence ${arrow('latency')}</span>
+      <span class="${cls('uptime')}" onclick="setSort('uptime')">Uptime ${arrow('uptime')}</span>
+      <span>Historique</span><span>Dernier check</span><span>Actions</span>
+    </div>
+    ${list.map((h,i)=>`
+    <div class="list-row ${h.status}" style="animation-delay:${i*0.025}s" onclick="openDrawer(${h.id})">
+      <div class="list-dot"></div>
+      <div><div class="list-name">${h.name}</div><div class="list-ip">${h.ip}</div></div>
+      <div><span class="type-badge type-${h.type}">${typeLabel(h.type)}</span></div>
+      <div class="list-latency ${latClass(h.latency)}">${h.latency!=null?h.latency+' ms':'—'}</div>
+      <div class="list-uptime">${uptimePct(h.history)}</div>
+      <div>${miniBar(h.history)}</div>
+      <div class="list-check">${h.lastCheck?h.lastCheck.toLocaleTimeString('fr-FR'):'—'}</div>
+      <div class="list-actions">
+        <button class="list-btn" onclick="event.stopPropagation();checkHost(hosts.find(x=>x.id===${h.id}))">↻</button>
+        <button class="list-btn edit" onclick="event.stopPropagation();openModal(${h.id})">✎</button>
+        <button class="list-btn danger" onclick="event.stopPropagation();removeHost(${h.id})">✕</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function emptyHTML() {
+  return `<div class="empty-state"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;display:block;opacity:0.2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>Aucun hôte pour ce filtre.</p></div>`;
+}
+
+function updateStats() {
+  document.getElementById('countOnline').textContent   = hosts.filter(h=>h.status==='online').length;
+  document.getElementById('countOffline').textContent  = hosts.filter(h=>h.status==='offline').length;
+  document.getElementById('countChecking').textContent = hosts.filter(h=>h.status==='checking').length;
+  document.getElementById('countTotal').textContent    = hosts.length;
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
+
+function openModal(id) {
+  const host = hosts.find(h=>h.id===id); if(!host) return;
+  editingHostId = id;
+  document.getElementById('eName').value = host.name;
+  document.getElementById('eIp').value   = host.ip;
+  document.getElementById('eType').value = host.type;
+  document.getElementById('modalWarn').classList.remove('show');
+  document.getElementById('eIp').oninput = () => {
+    document.getElementById('modalWarn').classList.toggle('show',
+      document.getElementById('eIp').value.trim() !== host.ip);
+  };
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingHostId = null;
+}
+async function saveEdit() {
+  const id   = editingHostId;
+  const name = document.getElementById('eName').value.trim();
+  const ip   = document.getElementById('eIp').value.trim();
+  const type = document.getElementById('eType').value;
+  if (!name||!ip) { alert('Nom et IP requis.'); return; }
+  const host = hosts.find(h=>h.id===id);
+  const ipChanged = host.ip !== ip;
+  if (useRealBackend) { try { await apiUpdateHost(id,name,ip,type); } catch { alert('Erreur.'); return; } }
+  host.name=name; host.ip=ip; host.type=type;
+  if (ipChanged) { host.history=[]; host.status='unknown'; host.latency=null; host.lastCheck=null; }
+  document.getElementById('modalOverlay').classList.remove('open'); editingHostId=null;
+  render(); if (drawerHostId===id) renderDrawer(host);
+  showToast(`"${name}" mis à jour`);
+  if (ipChanged) checkHost(host);
+}
+async function deleteFromModal() {
+  const id = editingHostId; if (!id) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  await removeHost(id);
+}
+function openEditFromDrawer() { const id=drawerHostId; closeDrawer(); setTimeout(()=>openModal(id),50); }
+
+// ─── Drawer ──────────────────────────────────────────────────────────────────
+
+function openDrawer(id) {
+  const host = hosts.find(h=>h.id===id); if(!host) return;
+  drawerHostId = id; renderDrawer(host);
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() {
+  drawerHostId=null;
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+function renderDrawer(host) {
+  document.getElementById('drawerTitle').innerHTML=`<span>${host.name}</span> — Historique`;
+  const avg=avgLatency(host.history);
+  document.getElementById('drawerMeta').innerHTML=`
+    <div class="dmeta"><div class="dmeta-label">Statut</div>
+      <div class="dmeta-value ${host.status==='online'?'good':host.status==='offline'?'bad':''}">${statusLabel(host.status)}</div></div>
+    <div class="dmeta"><div class="dmeta-label">Uptime</div><div class="dmeta-value">${uptimePct(host.history)}</div></div>
+    <div class="dmeta"><div class="dmeta-label">Lat. moy.</div>
+      <div class="dmeta-value ${avg?latClass(avg):''}">${avg!=null?avg+' ms':'—'}</div></div>
+    <div class="dmeta"><div class="dmeta-label">Checks</div><div class="dmeta-value">${host.history.length}</div></div>`;
+  const cd=[...host.history].slice(0,40).reverse();
+  const ml=Math.max(...cd.filter(e=>e.online&&e.latency).map(e=>e.latency),1);
+  document.getElementById('drawerChart').innerHTML=`
+    <div class="chart-label">Latence — 40 derniers checks</div>
+    <div class="latency-chart">${cd.map(e=>{
+      if(!e.online) return`<div class="lc-bar offline-bar" style="height:100%" data-tip="Offline · ${fmtTime(e.timestamp)}"></div>`;
+      const h=e.latency?Math.max(8,Math.round((e.latency/ml)*100)):8;
+      const col=e.latency<10?'var(--green)':e.latency<30?'#7dd3fc':'var(--yellow)';
+      return`<div class="lc-bar" style="height:${h}%;background:${col};opacity:0.7" data-tip="${e.latency}ms · ${fmtTime(e.timestamp)}"></div>`;
+    }).join('')}</div>`;
+  if(!host.history.length){document.getElementById('drawerLog').innerHTML='<div class="drawer-empty">Aucun historique.</div>';return;}
+  document.getElementById('drawerLog').innerHTML=`
+    <div class="log-title">Journal (${host.history.length} entrées)</div>
+    ${host.history.map(e=>`
+    <div class="log-row">
+      <div class="log-time">${fmtDateTime(e.timestamp)}</div>
+      <div class="log-status ${e.online?'up':'down'}">${e.online?'● En ligne':'● Hors ligne'}</div>
+      <div class="log-lat ${e.latency?latClass(e.latency):''}">${e.latency!=null?e.latency+' ms':'—'}</div>
+    </div>`).join('')}`;
+}
+
+function fmtTime(ts){try{return new Date(ts).toLocaleTimeString('fr-FR');}catch{return ts;}}
+function fmtDateTime(ts){try{const d=new Date(ts);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR');}catch{return ts;}}
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+
+function setView(v){viewMode=v;document.getElementById('btnGrid').classList.toggle('active',v==='grid');document.getElementById('btnList').classList.toggle('active',v==='list');render();}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function toggleForm(){document.getElementById('addForm').classList.toggle('show');}
+
+async function addHost(){
+  const name=document.getElementById('fName').value.trim();
+  const ip=document.getElementById('fIp').value.trim();
+  const type=document.getElementById('fType').value;
+  if(!name||!ip){alert('Nom et IP requis.');return;}
+  let newHost;
+  if(useRealBackend){try{newHost=await apiAddHost(name,ip,type);}catch{alert('Erreur.');return;}}
+  else{const m=hosts.reduce((m,h)=>Math.max(m,h.id),0);newHost={id:m+1,name,ip,type};}
+  hosts.push({...newHost,status:'unknown',latency:null,history:[],lastCheck:null});
+  updateStats();render();toggleForm();
+  document.getElementById('fName').value='';document.getElementById('fIp').value='';
+  checkHost(hosts[hosts.length-1]);
+}
+
+async function removeHost(id){
+  if(useRealBackend){try{await apiDeleteHost(id);}catch{alert('Erreur.');return;}}
+  const host=hosts.find(h=>h.id===id);
+  hosts=hosts.filter(h=>h.id!==id);
+  if(drawerHostId===id)closeDrawer();
+  updateStats();render();
+  if(host)showToast(`"${host.name}" supprimé`);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+detectBackend().then(()=>{render();checkAll();setInterval(checkAll,30000);});
+</script>
+</body>
+</html>

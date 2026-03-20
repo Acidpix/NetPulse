@@ -1,0 +1,29 @@
+[Unit]
+Description=NetPulse Network Monitor Backend
+After=network.target
+
+[Service]
+# ── Adapter ces chemins à votre installation ──────────────────────────────────
+WorkingDirectory=/opt/netpulse
+ExecStart=/usr/bin/node /opt/netpulse/server.js
+
+# Relance automatique si le process crash
+Restart=always
+RestartSec=5
+
+# Nécessaire pour que le ping ICMP fonctionne sans lancer Node en root
+# Donne uniquement la capability réseau bas niveau
+User=root
+
+# Variables d'environnement
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+# Logs — consultables avec : journalctl -u netpulse -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=netpulse
+
+[Install]
+# Démarre automatiquement au boot
+WantedBy=multi-user.target
